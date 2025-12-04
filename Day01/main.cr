@@ -4,12 +4,14 @@ module AoC
     @@zero_count = 0
     @@steps_list = ["Start: position = #{@@position}"]
 
-    def self.error(msg : String) : Nil
+    extend self
+
+    def error(msg : String) : Nil
         STDERR.puts msg
         exit 84
     end
 
-    def self.get_password(rotations : String) : Tuple(Int32, Array(String))
+    def get_password(rotations : String) : Tuple(Int32, Array(String))
 
         rotations.strip.split("\n").each { |line|
             direction = line[0]
@@ -17,9 +19,9 @@ module AoC
 
             case direction
             when 'L'
-                @@position = (@@position - distance + 100) % 100
+                rotation_l_p1(distance)
             when 'R'
-                @@position = (@@position + distance) % 100
+                rotation_r_p1(distance)
             else
                 error("Invalid direction: #{direction}")
             end
@@ -33,6 +35,14 @@ module AoC
         }
 
         return @@zero_count, @@steps_list
+    end
+
+    private def rotation_l_p1(distance : Int32) : Nil
+        @@position = (@@position - distance + 100) % 100
+    end
+
+    private def rotation_r_p1(distance : Int32) : Nil
+        @@position = (@@position + distance) % 100
     end
 
 end
