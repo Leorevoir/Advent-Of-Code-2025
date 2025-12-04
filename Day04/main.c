@@ -38,43 +38,6 @@ static char *get_file_content(const char *filename)
     return buffer;
 }
 
-static inline u32 count_adjacent_rolls(const Map *map, const i32 row, const i32 col)
-{
-    u32 count = 0;
-
-    for (u32 i = 0; i < 8; ++i)
-    {
-        const i32 nr = row + DR[i];
-        const i32 nc = col + DC[i];
-
-        if (nr >= 0 && nr < map->rows && nc >= 0 && nc < map->cols && map->grid[nr][nc] == '@')
-        {
-            ++count;
-        }
-    }
-    return count;
-}
-
-static u32 count_accessible_rolls(const Map *map)
-{
-    u32 accessible = 0;
-
-    for (i32 r = 0; r < map->rows; ++r)
-    {
-        for (i32 c = 0; c < map->cols; ++c)
-        {
-            if (map->grid[r][c] == '@')
-            {
-                if (count_adjacent_rolls(map, r, c) < 4)
-                {
-                    ++accessible;
-                }
-            }
-        }
-    }
-    return accessible;
-}
-
 static void free_map(Map *map)
 {
     if (!map || !map->grid)
@@ -123,15 +86,75 @@ static void string_to_map(Map *map, const char *str)
     }
 }
 
-static u32 forklift(const char *buffer)
+static inline u32 count_adjacent_rolls(const Map *map, const i32 row, const i32 col)
+{
+    u32 count = 0;
+
+    for (u32 i = 0; i < 8; ++i)
+    {
+        const i32 nr = row + DR[i];
+        const i32 nc = col + DC[i];
+
+        if (nr >= 0 && nr < map->rows && nc >= 0 && nc < map->cols && map->grid[nr][nc] == '@')
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+static u32 count_accessible_rolls(const Map *map)
+{
+    u32 count = 0;
+    for (i32 r = 0; r < map->rows; ++r)
+    {
+        for (i32 c = 0; c < map->cols; ++c)
+        {
+            if (map->grid[r][c] == '@' && count_adjacent_rolls(map, r, c) < 4)
+            {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+static u32 remove_accessible_rolls(Map *map)
+{
+    u32 removed = 0;
+    for (i32 r = 0; r < map->rows; ++r)
+    {
+        for (i32 c = 0; c < map->cols; ++c)
+        {
+            if (map->grid[r][c] == '@' && count_adjacent_rolls(map, r, c) < 4)
+            {
+                map->grid[r][c] = '.';
+                ++removed;
+            }
+        }
+    }
+    return removed;
+}
+
+static void forklift(const char *buffer)
 {
     Map map = {0};
-    u32 rv;
+    u32 total_removed = 0;
+    u32 removed;
 
     string_to_map(&map, buffer);
-    rv = count_accessible_rolls(&map);
+
+    const u32 accessible = count_accessible_rolls(&map);
+
+    do
+    {
+        removed = remove_accessible_rolls(&map);
+        total_removed += removed;
+    } while (removed > 0);
+
     free_map(&map);
-    return rv;
+    printf("%u\n", accessible);
+    printf("%u\n", total_removed);
 }
 
 i32 main(const i32 argc, const char **argv)
@@ -148,6 +171,6 @@ i32 main(const i32 argc, const char **argv)
         return ERROR;
     }
 
-    printf("%u\n", forklift(buffer));
+    forklift(buffer);
     return SUCCESS;
 }
